@@ -3,7 +3,11 @@ var bodyParser = require('body-parser')
 var cors = require('cors');
 var app = express();
 var players = require("./players")
-console.log(players);
+var methodOverride = require('method-override');
+var fs = require('fs');
+
+// override with POST having ?_method=DELETE
+app.use(methodOverride('_method'));
 
 app.use(cors());
 app.use(bodyParser.json());       // to support JSON-encoded bodies
@@ -11,26 +15,55 @@ app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
   extended: true
 }));
 
-// 3000/players.
+// 3000/players
 app.get("/players", function(req, res) {
   res.json(players);
 });
 
+// 3000/players
+app.post("/players", function(req, res) {
+  // generate a new id and create a new player.
+  var id = players.length;
+  var newPlayer = {
+    id: id,
+    name: req.body.name,
+    score: req.body.score
+  };
+  createPlayer(newPlayer);
 
-
-// READ
-// app.get("/products", function(req, res) {
-//   var products = getProducts();
-//   res.render('products_all', {products: products});
-// });
-
-
-
-
-app.get("/players/:id", function(req, res) {
-  var product = getProduct(req.params.id);
-  res.render('product_detail', {product: product});
+  res.redirect('/players/' + players.id);
 });
+
+
+function createPlayer(newPlayer) {
+  writePlayer(newPlayer);
+}
+
+// Converts the given player to JSON and saves the list to a permanent file.
+function writePlayer(newPlayer) {
+  var json = JSON.stringify(newPlayer);
+  fs.writeFileSync('./players.json', json);
+}
+
+
+
+// 3000/players/*
+app.get("/players/:id", function(req, res) {
+  var requestedID = req.params.id
+  //making the url id a variable requestedID so we can work with it
+  var requestedPlayer
+  //defining a variable requestedPlayer that we can respond with
+  for (var i = 0; i < players.length; i++) {
+    if (players[i].id==requestedID) {
+      console.log(players[i]);
+      requestedPlayer = players[i]
+    }
+  }
+  res.json(requestedPlayer);
+});
+
+
+
 
 
 
@@ -41,14 +74,9 @@ app.listen(3000, () => {
 
 
 
-// var fs = require('fs');
-// var methodOverride = require('method-override');
+
 // var path = require('path');
 
-
-
-// override with POST having ?_method=DELETE
-// app.use(methodOverride('_method'));
 
 // configure app to use ejs for templates
 // app.set('view engine', 'ejs');
@@ -58,34 +86,8 @@ app.listen(3000, () => {
 // app.use(express.static(staticPath));
 
 
-// // Home page.
-// app.get("/", function(req, res) {
-//   var products = getProducts();
-//   res.render('index', {totalProducts: products.length});
-// });
-
 
 //
-// // CREATE
-// app.get("/products/new", function(req, res) {
-//   res.render('product_new');
-// });
-//
-// app.post("/products", function(req, res) {
-//   // generate a new id and create the whole product.
-//   var id = "ZX0000" + products.length;
-//   var product = {
-//     id: id,
-//     name: req.body.name,
-//     price: req.body.price,
-//     quantity: req.body.quantity,
-//     description: req.body.description
-//   };
-//
-//   createProduct(product);
-//
-//   res.redirect('/products/' + product.id);
-// });
 //
 // // READ
 // app.get("/products", function(req, res) {
